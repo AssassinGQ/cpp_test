@@ -7,6 +7,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(tests
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_template.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_unorderd_map.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_process.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_thread.cpp
         )
