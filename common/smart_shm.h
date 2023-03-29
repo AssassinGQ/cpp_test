@@ -11,9 +11,15 @@
 #include <iostream>
 #include <cstring>
 
+// This header file defines a class for managing shared memory segments.
+// It provides a convenient way to create, attach, and detach shared memory
+// segments, as well as to access the data stored in them.
 class SmartSHM {
 public:
+    // Constructor that takes the size of the shared memory segment as an argument.
     explicit SmartSHM(int size) : size_(size) {}
+
+    // Destructor that detaches the shared memory segment and removes it from the system.
     virtual ~SmartSHM() {
         Detach();
         if (shmid_ > 0) {
@@ -22,6 +28,8 @@ public:
         }
     }
 
+    // Initializes the shared memory segment with the given key.
+    // Returns true if successful, false otherwise.
     bool Init(int key) {
         if (size_ <= 0) {
             std::cerr << "Size should be larger than zero, got: " << size_ << std::endl;
@@ -33,8 +41,16 @@ public:
         }
         shmid_ = shmget(key, size_, IPC_CREAT | IPC_EXCL | 0664);
         if (shmid_ == -1) {
-            std::cerr << "Create shm failed" << std::endl;
-            return false;
+            if (errno == EEXIST) {
+                shmid_ = shmget(key, size_, 0664);
+                if (shmid_ == -1) {
+                    std::cerr << "Open shm failed" << std::endl;
+                    return false;
+                }
+            } else {
+                std::cerr << "Create shm failed" << std::endl;
+                return false;
+            }
         }
         ptr_ = shmat(shmid_, nullptr, 0);
         if (ptr_ == nullptr) {
@@ -44,6 +60,7 @@ public:
         return true;
     }
 
+    // Returns a pointer to the data stored in the shared memory segment.
     template<class T>
     T *Get() const {
         if (ptr_ == nullptr) {
@@ -60,6 +77,7 @@ public:
     int GetSize() const { return size_; }
 
 private:
+    // Detaches the shared memory segment from the current process.
     void Detach() {
         if (ptr_ != nullptr) {
             shmdt(ptr_);
@@ -67,9 +85,10 @@ private:
         }
     }
 
-    int size_{0};
-    int shmid_{0};
-    void *ptr_{nullptr};
+private:
+    int size_;  // The size of the shared memory segment.
+    int shmid_ = -1;  // The ID of the shared memory segment.
+    void* ptr_ = nullptr;  // A pointer to the data stored in the shared memory segment.
 };
 
 #endif //CPP_TEST_SMARTSHM_H
